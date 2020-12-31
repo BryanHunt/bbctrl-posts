@@ -614,15 +614,15 @@ function onSection() {
     if (spindleSpeed > 99999) {
       warning(localize("Spindle speed exceeds maximum value."));
     }
-    if (spindleDelay < 0) {
+    if (properties.spindleDelay < 0) {
       error(localize("Spindle delay may not be < 0"));
       return;
     }
     writeBlock(
       sOutput.format(spindleSpeed), mFormat.format(tool.clockwise ? 3 : 4)
     );
-    if (spindleDelay > 0) {
-      writeBlock(gOutput.format(4), pFormat.format(spindleDelay));
+    if (properties.spindleDelay > 0) {
+      writeBlock(gOutput.format(4), pFormat.format(properties.spindleDelay));
     }
   }
   if (isProbeOperation() == true) return;
@@ -753,8 +753,8 @@ function onDwell(seconds) {
 
 function onSpindleSpeed(spindleSpeed) {
   writeBlock(sOutput.format(spindleSpeed));
-  if (spindleDelay > 0) {
-    writeBlock(gOutput.format(4), pFormat.format(spindleDelay));
+  if (properties.spindleDelay > 0) {
+    writeBlock(gOutput.format(4), pFormat.format(properties.spindleDelay));
   }
 }
 
