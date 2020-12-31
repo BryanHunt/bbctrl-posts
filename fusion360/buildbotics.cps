@@ -58,8 +58,8 @@ properties = {
   toolLengthCompensation: false, //Added for Buildbotics, specifies whether to use tool length compensation. Buildbotics controller does not have a tool table so users will have to keep track of this manually if they use it
   skipFirstToolChange: false, //Added for customer that wanted to bypass first tool change because he puts the tool in himself before starting the program
   zRetractHeight: 10,
-  disableCoolantControl: false
-
+  disableCoolantControl: false,
+  spindleDelay: 0
 };
 
 // user-defined property definitions
@@ -94,7 +94,8 @@ propertyDefinitions = {
 				   type:"number"},
   disableCoolantControl: {title:"Disable coolant control",
 						  description: "Set to yes to disable coolant control commands in the GCode program. Set this to true if the Load1 or Load2 outputs on the Buildbotics Controller are used for something other than coolant control",
-						  type: "boolean"}
+						  type: "boolean"},
+  spindleDelay: {title:"Spindle Delay", description:"Time in seconds to delay after setting spindle speed.", type:"integer"},
 };
 
 var permittedCommentChars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,=_-";
@@ -121,6 +122,7 @@ var gFormat = createFormat({prefix:"G", decimals:0});
 var mFormat = createFormat({prefix:"M", decimals:0});
 var hFormat = createFormat({prefix:"H", decimals:0});
 var dFormat = createFormat({prefix:"D", decimals:0});
+var pFormat = createFormat({prefix:"P", decimals:0});
 
 var xyzFormat = createFormat({decimals:(unit == MM ? 3 : 4)});
 var abcFormat = createFormat({decimals:3, forceDecimal:true, scale:DEG});
@@ -138,6 +140,8 @@ var aOutput = createVariable({prefix:"A"}, abcFormat);
 var bOutput = createVariable({prefix:"B"}, abcFormat);
 var cOutput = createVariable({prefix:"C"}, abcFormat);
 var feedOutput = createVariable({prefix:"F"}, feedFormat);
+var gOutput = createVariable({}, gFormat);
+var pOutput = createVariable({}, pFormat);
 var sOutput = createVariable({prefix:"S", force:true}, rpmFormat);
 var dOutput = createVariable({}, dFormat);
 
@@ -610,9 +614,16 @@ function onSection() {
     if (spindleSpeed > 99999) {
       warning(localize("Spindle speed exceeds maximum value."));
     }
+    if (spindleDelay < 0) {
+      error(localize("Spindle delay may not be < 0"));
+      return;
+    }
     writeBlock(
       sOutput.format(spindleSpeed), mFormat.format(tool.clockwise ? 3 : 4)
     );
+    if (spindleDelay > 0) {
+      writeBlock(gOutput.format(4), pFormat.format(spindleDelay));
+    }
   }
   if (isProbeOperation() == true) return;
   
@@ -742,6 +753,9 @@ function onDwell(seconds) {
 
 function onSpindleSpeed(spindleSpeed) {
   writeBlock(sOutput.format(spindleSpeed));
+  if (spindleDelay > 0) {
+    writeBlock(gOutput.format(4), pFormat.format(spindleDelay));
+  }
 }
 
 function onCycle() {
